@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pop Heart SCC</title>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; background:#f0f0f0; font-family:Arial,sans-serif; }
+.cat { width:100%; height:100%; background:url('https://i.postimg.cc/K8VpZMWd/LOGO-SCC-MOTOR-2.png') no-repeat center center; background-size:contain; cursor:pointer; position:relative; }
+.scoreboard { position:absolute; top:10px; left:10px; background:rgba(255,255,255,0.8); padding:10px; border-radius:10px; max-height:90%; overflow:auto; }
+.heart { position:absolute; font-size:32px; color:red; animation:floatUp 1s ease-out forwards; }
+@keyframes floatUp { 0% {opacity:1; transform:translateY(0);} 100% {opacity:0; transform:translateY(-150px);} }
+</style>
+</head>
+<body>
+
+<div class="cat" id="cat">
+  <div class="scoreboard">
+    ชื่อ: <span id="usernameDisplay">Guest</span> | คะแนน: <span id="score">0</span>
+    <div><h4>Leaderboard</h4><ol id="leaderboard"></ol></div>
+  </div>
+</div>
+
+<script>
+let score = 0;
+let username = "";
+let WEB_APP_URL = "YOUR_DEPLOYED_WEB_APP_URL"; // ใส่ URL Web App
+
+// ตั้งชื่อผู้เล่น
+window.onload = function() {
+  username = prompt("กรุณากรอกชื่อผู้เล่น:");
+  if(!username) username = "Guest";
+  document.getElementById("usernameDisplay").innerText = username;
+  updateLeaderboard();
+}
+
+// สร้างหัวใจลอย
+function createHeart(x,y){
+  let heart = document.createElement("div");
+  heart.className = "heart";
+  heart.style.left = (x-16)+"px";
+  heart.style.top = (y-16)+"px";
+  heart.innerHTML = "❤️";
+  document.body.appendChild(heart);
+  setTimeout(()=>heart.remove(),1000);
+}
+
+// เพิ่มคะแนนและส่งไป Web App
+function addScore(e){
+  score++;
+  document.getElementById("score").innerText = score;
+  
+  let rect = e.target.getBoundingClientRect();
+  createHeart(rect.left + rect.width/2, rect.top + rect.height/2);
+  
+  // ส่งคะแนน
+  $.get(WEB_APP_URL, {username:username, score:1}, function(data){
+    if(data.status=="ok") updateLeaderboard(data.leaderboard);
+  });
+}
+
+// อัปเดต Leaderboard
+function updateLeaderboard(leaderboard){
+  if(!leaderboard){
+    $.get(WEB_APP_URL, {username:username, score:0}, function(data){
+      if(data.status=="ok") updateLeaderboard(data.leaderboard);
+    });
+    return;
+  }
+  let lb = document.getElementById("leaderboard");
+  lb.innerHTML = "";
+  leaderboard.forEach(u=>{
+    let li = document.createElement("li");
+    li.textContent = u.username + " : " + u.score;
+    lb.appendChild(li);
+  });
+}
+
+document.getElementById("cat").addEventListener("click", addScore);
+</script>
+
+</body>
+</html>
